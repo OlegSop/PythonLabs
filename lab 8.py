@@ -1,29 +1,36 @@
 import os
 import hashlib
+from contextlib import contextmanager
 
 
-def hash_file(path, block_size=65536):
-    a_file = open(path, 'rb')
-    hashes = hashlib.md5()
-    buf = a_file.read(block_size)
-    while len(buf) > 0:
-        hashes.update(buf)
+@contextmanager
+def hash_file(folder_path, block_size=65536):
+    try:
+        a_file = open(folder_path, 'rb')
+        hashes = hashlib.md5()
         buf = a_file.read(block_size)
-    a_file.close()
-    return hashes.hexdigest()
+        while len(buf) > 0:
+            hashes.update(buf)
+            buf = a_file.read(block_size)
+        return hashes.hexdigest()
+    except OSError:
+        print("Error!")
+    finally:
+        print("Closing file.")
+        a_file.close()
 
 
 def find_duplicates(folder):
     duplicates = {}
     for dir_name, subdir, file_list in os.walk(folder):
         print(f"Scan {dir_name}...")
-        for file in file_list:
-            path = os.path.join(dir_name, file)
-            file_hash = hash_file(path)
+        for file_name in file_list:
+            folder_path = os.path.join(dir_name, file_name)
+            file_hash = hash_file(folder_path)
             if file_hash in duplicates:
-                duplicates[file_hash].append(path)
+                duplicates[file_hash].append(folder_path)
             else:
-                duplicates[file_hash] = [path]
+                duplicates[file_hash] = [folder_path]
     return duplicates
 
 
